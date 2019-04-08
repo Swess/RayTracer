@@ -7,6 +7,7 @@ using namespace std;
 #ifndef RAYTRACER_HELPERS_H
 #define RAYTRACER_HELPERS_H
 
+
 /**
  * All surfaces materials struct
  */
@@ -56,7 +57,6 @@ public:
         this->fov = fov;
         this->focalLength = fl;
     }
-
 };
 
 /**
@@ -101,6 +101,8 @@ struct Scene {
     vector<Light> lights;
     vector<Renderable> objs;
 };
+
+
 
 
 #endif //RAYTRACER_HELPERS_H

@@ -1,8 +1,10 @@
+#define cimg_OS 1  // 1:MAC .. 2: Windows
 #include <fstream>
 #include <vector>
-#include "CImg.h"
+#include <CImg.h>
 #include "NeededMath.h"
 #include "Helpers.h"
+
 
 using namespace std;
 
