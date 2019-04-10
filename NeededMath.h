@@ -2,6 +2,9 @@
 #ifndef RAYTRACER_NEEDEDMATH_H
 #define RAYTRACER_NEEDEDMATH_H
 
+#include <sstream>
+using namespace std;
+
 /**
  * Vector definition
  */
@@ -20,7 +23,15 @@ struct Vec3 {
         double mg = sqrt(x*x + y*y + z*z);
         return {x/mg,y/mg,z/mg};
     }
+
+    string toString() const {
+        return "{" + to_string(x) + " " + to_string(y) + " " + to_string(z) + "}";
+    }
 };
+
+inline double dot(const Vec3& a, const Vec3& b) {
+    return (a.x*b.x + a.y*b.y + a.z*b.z);
+}
 
 
 /**

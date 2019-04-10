@@ -3,12 +3,23 @@ project(RayTracer)
 
 set(CMAKE_CXX_STANDARD 14)
 
-include_directories("/usr/local/include")
-include_directories("/opt/X11/include")
+
+SET(GCC_COVERAGE_COMPILE_FLAGS "-lX11 -lpthread")
+# SET(GCC_COVERAGE_LINK_FLAGS    "-lX11 -lpthread")
+
+include_directories(/usr/local/include)
+include_directories(/opt/X11/include)
 include_directories(.)
 
+link_directories(/opt/X11/lib)
+
+
+# add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
+
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
+SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
+
 add_executable(RayTracer
-        CImg.h
-        Helpers.h
+        geometry.h
         main.cpp
         NeededMath.h)

@@ -1,12 +1,12 @@
-#define cimg_OS 1  // 1:MAC .. 2: Windows
 #include <fstream>
 #include <vector>
+#include <cmath>
 #include <CImg.h>
 #include "NeededMath.h"
-#include "Helpers.h"
-
+#include "geometry.h"
 
 using namespace std;
+using namespace cimg_library;
 
 // Signatures
 void loadScene(ifstream &file, Scene &scene);
@@ -16,12 +16,12 @@ Vec3 readVec3(ifstream &file);
 
 // Main
 int main() {
-    const int WIDTH = 1080;
-    const int HEIGHT = 920;
     Scene scene;
 
     ifstream inFile;
     string filename;
+
+    bool asking = false;
 
     // Ask the user for a scene file filename to parse
     cout << "Please enter a filename of a scenefile to load:" << endl;
@@ -30,20 +30,76 @@ int main() {
     // Opening the file
     inFile.open(filename);
     if (!inFile) {
-        cerr << "Unable to open file " << filename <<  filename;
+        cerr << "Unable to open file " << filename;
         exit(1);   // call system to stop
     }
-
-    cout << "Passed condition." << endl;
 
     // Create scene
     loadScene(inFile, scene);
     inFile.close();
-
     cout << "Scene successfully loaded." << endl;
 
-    cout << scene.objs.size() << endl;
 
+    // Set const for shooting ray
+    const float tanHalf = tan(scene.cam.fov / 2);
+    const int HEIGHT = tan(scene.cam.fov / 2) * 2 *
+                       scene.cam.focalLength;   // Here FOV has been loaded and converted to radians already.
+    const int WIDTH = scene.cam.aspectRatio * HEIGHT;
+
+
+    // Creates an image with three channels and sets it to black
+    CImg<float> image(WIDTH, HEIGHT, 1, 3, 0);
+
+    // Shoot rays
+    for (int i = -WIDTH / 2; i < WIDTH / 2; i++) {
+        double x = scene.cam.aspectRatio * tanHalf * i * 2 / (double) WIDTH;
+        int imgX = i + WIDTH/2;
+
+        for (int j = -HEIGHT / 2; j < HEIGHT / 2; j++) {
+            double y = tanHalf * j * 2 / (double) WIDTH;
+            int imgY = j + HEIGHT/2;
+
+            // Create ray
+            Ray ray = Ray(scene.cam.position, Vec3(x, y, -1));
+
+            // Check intersection with each objs
+            double closestScalar = INFINITY;
+            Renderable *closestObj;
+            for (int k = 0; k < scene.objs.size(); k++) {
+
+                // Return only value > 0
+                double t = scene.objs[k]->intersect(ray);
+
+                // The closest intersection only
+                if (t < closestScalar && t > 0) {
+                    closestScalar = t;
+                    closestObj = scene.objs[k];
+                }
+            }
+
+            // Color pixel
+            if(closestScalar < INFINITY){
+
+                // White for testing
+                image(imgX,imgY,0) = 255.0f;
+                image(imgX,imgY,1) = 255.0f;
+                image(imgX,imgY,2) = 255.0f;
+            }
+
+
+        }
+    }
+
+    // scenes/scene1.txt
+
+    // Save img
+    image.save("render.bmp");
+
+    // Display img
+    CImgDisplay main_disp(image,"Render");
+    while (!main_disp.is_closed()) {
+        main_disp.wait();
+    }
 
     // End process
     return 0;
@@ -68,7 +124,7 @@ void loadScene(ifstream &file, Scene &scene) {
                     scene.cam.position = readVec3(file);
                 } else if (token == "fov:") {
                     file >> token;
-                    scene.cam.fov = std::stof(token);
+                    scene.cam.fov = std::stod(token) * (M_PI / 180);
                 } else if (token == "f:") {
                     file >> token;
                     scene.cam.focalLength = std::stof(token);
@@ -104,7 +160,7 @@ void loadScene(ifstream &file, Scene &scene) {
             sphere.material = mat;
 
             // Add to scene
-            scene.objs.push_back(sphere);
+            scene.objs.push_back(&sphere);
 
         } else if (token == "plane") {
             Plane plane = Plane();
@@ -130,7 +186,7 @@ void loadScene(ifstream &file, Scene &scene) {
             plane.material = mat;
 
             // Add to scene
-            scene.objs.push_back(plane);
+            scene.objs.push_back(&plane);
 
         } else if (token == "light") {
             Light light = Light();
@@ -147,7 +203,7 @@ void loadScene(ifstream &file, Scene &scene) {
             }
 
             // Add to scene
-            scene.lights.push_back(light);
+            scene.lights.push_back(&light);
         }
     }
 }
