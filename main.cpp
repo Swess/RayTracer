@@ -37,8 +37,6 @@ int main() {
     inFile.close();
     cout << "Scene successfully loaded." << endl;
 
-    // cout << scene.objs[0]->position.toString() << endl;
-
 
     // Set const for shooting ray
     const float tanHalf = tan(scene.cam.fov / 2);
@@ -77,8 +75,20 @@ int main() {
                 }
             }
 
-            // Color pixel
+            // Color pixel at calculated intersection
             if(closestScalar < INFINITY){
+                // Compute intersection world coord
+                Vec3 pointIntersect = scene.cam.position + (ray.direction*closestScalar);
+
+                // Cast shadow rays
+                for(int l=0; l<scene.lights.size(); l++){
+                    Light *light = scene.lights[l];
+                    Vec3 shadowDir = light->position - pointIntersect;
+                    Ray shadowRay = Ray(pointIntersect, shadowDir);
+
+                    // TODO: Detect intersection between pointIntersect and light
+                }
+
                 // Color
                 image(imgX,imgY,0) = closestObj->material.diffuse.x * 255.0f;
                 image(imgX,imgY,1) = closestObj->material.diffuse.y * 255.0f;
@@ -135,16 +145,16 @@ void loadScene(ifstream &file, Scene &scene) {
 
 
         } else if (token == "sphere") {
-            Sphere sphere = Sphere(Vec3(), 0);
+            Sphere *sphere = new Sphere(Vec3(), 0);
             Material mat;
 
             for (int i = 0; i < 6; i++) {
                 file >> token;
                 if (token == "pos:") {
-                    sphere.position = readVec3(file);
+                    sphere->position = readVec3(file);
                 } else if (token == "rad:") {
                     file >> token;
-                    sphere.radius = std::stod(token);
+                    sphere->radius = std::stod(token);
                 } else if (token == "amb:") {
                     mat.ambient = readVec3(file);
                 } else if (token == "dif:") {
@@ -156,21 +166,21 @@ void loadScene(ifstream &file, Scene &scene) {
                     mat.shininess = std::stof(token);
                 }
             }
-            sphere.material = mat;
+            sphere->material = mat;
 
             // Add to scene
-            scene.objs.push_back(&sphere);
+            scene.objs.push_back(sphere);
 
         } else if (token == "plane") {
-            Plane plane = Plane();
+            Plane *plane = new Plane();
             Material mat;
 
             for (int i = 0; i < 6; i++) {
                 file >> token;
                 if (token == "pos:") {
-                    plane.position = readVec3(file);
+                    plane->position = readVec3(file);
                 } else if (token == "nor:") {
-                    plane.normal = readVec3(file);
+                    plane->normal = readVec3(file);
                 } else if (token == "amb:") {
                     mat.ambient = readVec3(file);
                 } else if (token == "dif:") {
@@ -182,27 +192,27 @@ void loadScene(ifstream &file, Scene &scene) {
                     mat.shininess = std::stof(token);
                 }
             }
-            plane.material = mat;
+            plane->material = mat;
 
             // Add to scene
-            scene.objs.push_back(&plane);
+            scene.objs.push_back(plane);
 
         } else if (token == "light") {
-            Light light = Light();
+            Light *light = new Light();
 
             for (int i = 0; i < 3; i++) {
                 file >> token;
                 if (token == "pos:") {
-                    light.position = readVec3(file);
+                    light->position = readVec3(file);
                 } else if (token == "dif:") {
-                    light.diffuseColor = readVec3(file);
+                    light->diffuseColor = readVec3(file);
                 } else if (token == "spe:") {
-                    light.specularColor = readVec3(file);
+                    light->specularColor = readVec3(file);
                 }
             }
 
             // Add to scene
-            scene.lights.push_back(&light);
+            scene.lights.push_back(light);
         }
     }
 }
