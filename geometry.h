@@ -128,7 +128,23 @@ public:
 
     Plane() {}
 
+    /**
+     * Try to intersect the ray with the shape, and return only the closest t solution.
+     * Ignore -t solutions.
+     * Returns INFINITY otherwise.
+     *
+     * @param ray
+     * @return t
+     */
     double intersect(Ray ray) override {
+        float denominator = dot(normal, ray.direction.normalize());
+
+        if (abs(denominator) > 0.000001f){
+            float t = dot( (position - ray.origin), normal) / denominator;
+            if (t>=0)
+                return t;
+        }
+
         return INFINITY;
     }
 };
