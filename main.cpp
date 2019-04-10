@@ -21,8 +21,6 @@ int main() {
     ifstream inFile;
     string filename;
 
-    bool asking = false;
-
     // Ask the user for a scene file filename to parse
     cout << "Please enter a filename of a scenefile to load:" << endl;
     cin >> filename;
@@ -39,6 +37,8 @@ int main() {
     inFile.close();
     cout << "Scene successfully loaded." << endl;
 
+    // cout << scene.objs[0]->position.toString() << endl;
+
 
     // Set const for shooting ray
     const float tanHalf = tan(scene.cam.fov / 2);
@@ -52,15 +52,15 @@ int main() {
 
     // Shoot rays
     for (int i = -WIDTH / 2; i < WIDTH / 2; i++) {
-        double x = scene.cam.aspectRatio * tanHalf * i * 2 / (double) WIDTH;
+        // Current pixel x, calculated from ray.x coordinate (i)
         int imgX = i + WIDTH/2;
 
-        for (int j = -HEIGHT / 2; j < HEIGHT / 2; j++) {
-            double y = tanHalf * j * 2 / (double) WIDTH;
-            int imgY = j + HEIGHT/2;
+        for (int j = HEIGHT / 2; j > -HEIGHT/2; j--) {
+            // Current pixel y, calculated from ray.y coordinate (j)
+            int imgY = -j + HEIGHT/2;
 
-            // Create ray
-            Ray ray = Ray(scene.cam.position, Vec3(x, y, -1));
+            // Create ray for current pixel
+            Ray ray = Ray(scene.cam.position, Vec3(i, j, -scene.cam.focalLength).normalize());
 
             // Check intersection with each objs
             double closestScalar = INFINITY;
@@ -79,11 +79,10 @@ int main() {
 
             // Color pixel
             if(closestScalar < INFINITY){
-
-                // White for testing
-                image(imgX,imgY,0) = 255.0f;
-                image(imgX,imgY,1) = 255.0f;
-                image(imgX,imgY,2) = 255.0f;
+                // Color
+                image(imgX,imgY,0) = closestObj->material.diffuse.x * 255.0f;
+                image(imgX,imgY,1) = closestObj->material.diffuse.y * 255.0f;
+                image(imgX,imgY,2) = closestObj->material.diffuse.z * 255.0f;
             }
 
 
