@@ -2,8 +2,8 @@
 #include <vector>
 #include <cmath>
 #include <CImg.h>
-#include "glm/vec3.hpp"
-#include "glm/geometric.hpp"
+#include "glm.hpp"
+#include "OBJloader.h"
 #include "NeededMath.h"
 #include "geometry.h"
 
@@ -139,7 +139,6 @@ int main() {
     }
 
     // Save img
-    // image.normalize(0, 255);
     image.save("render.bmp");
 
     // Display img
@@ -251,6 +250,41 @@ void loadScene(ifstream &file, Scene &scene) {
 
             // Add to scene
             scene.lights.push_back(light);
+        } else if(token == "mesh"){
+            Mesh mesh;
+            Material mat;
+
+            for(int i=0; i<5; i++){
+                file >> token;
+
+                if(token == "file:"){
+                    file >> token;
+                    // Load OBJ and create triangles for the mesh
+                    string path = "scenes/";
+                    path.append(token);
+
+                    vector<vec3> vertices;
+                    vector<vec3> normals;
+                    vector<vec2> UVs;
+
+
+                    loadOBJ(path.c_str(), vertices, normals, UVs);
+                    cout << vertices.size() << " " << normals.size() << " " << UVs.size() << endl;
+
+                } else if (token == "amb:") {
+                    mat.ambient = readVec3(file);
+                } else if (token == "dif:") {
+                    mat.diffuse = readVec3(file);
+                } else if (token == "spe:") {
+                    mat.specular = readVec3(file);
+                } else if (token == "shi:") {
+                    file >> token;
+                    mat.shininess = std::stof(token);
+                }
+            }
+
+            mesh.material = mat;
+
         }
     }
 }

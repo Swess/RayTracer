@@ -161,6 +161,22 @@ public:
 
 
 /**
+ * Class that represent every triangle in a mesh
+ */
+class Triangle : public Plane {
+
+};
+
+/**
+ * Holding mesh informations
+ */
+struct Mesh {
+    Material material;
+    vector<Triangle *> triangles;
+};
+
+
+/**
  * Scene containing all objects
  */
 struct Scene {
