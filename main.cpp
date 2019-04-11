@@ -116,7 +116,7 @@ int main() {
                         result += light->diffuseColor * diffuseCoef;
 
                         // Specular
-                        result += light->diffuseColor * specularCoef;
+                        result += light->specularColor * specularCoef;
                     }
                 }
 
