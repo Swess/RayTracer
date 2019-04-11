@@ -40,7 +40,6 @@ int main() {
     inFile.close();
     cout << "Scene successfully loaded." << endl;
 
-
     // Set const for shooting ray
     const float tanHalf = tan(scene.cam.fov / 2);
     const int HEIGHT = tan(scene.cam.fov / 2) * 2 *
@@ -267,9 +266,15 @@ void loadScene(ifstream &file, Scene &scene) {
                     vector<vec3> normals;
                     vector<vec2> UVs;
 
-
+                    // Load the OBJ data
                     loadOBJ(path.c_str(), vertices, normals, UVs);
-                    cout << vertices.size() << " " << normals.size() << " " << UVs.size() << endl;
+
+                    // Build triangle out of the vertices data
+                    for(int t=0; t<vertices.size(); t+=3){
+                        Triangle *tri = new Triangle(vertices[t], vertices[t+1], vertices[t+2]);
+                        mesh.triangles.push_back(tri);
+                    }
+
 
                 } else if (token == "amb:") {
                     mat.ambient = readVec3(file);
@@ -283,8 +288,12 @@ void loadScene(ifstream &file, Scene &scene) {
                 }
             }
 
-            mesh.material = mat;
-
+            // Assign material to all triangles
+            // TODO: structure this in a better way
+            for(int k=0; k<mesh.triangles.size(); k++){
+                mesh.triangles[k]->material = mat;
+                scene.objs.push_back(mesh.triangles[k]);
+            }
         }
     }
 }

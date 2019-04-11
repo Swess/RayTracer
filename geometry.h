@@ -116,6 +116,15 @@ public:
             result = glm::min(t0,t1);
         }
 
+        // Check if it was a backface, if so, ignore
+        if(result<INFINITY){
+            // Normal at point
+            vec3 np = getNormalAt(ray.origin + (float)result*ray.direction);
+            if( dot(normalize(np),normalize(ray.direction)) > 0 )
+                return INFINITY;
+        }
+
+
         return result;
     }
 
@@ -137,18 +146,19 @@ public:
     /**
      * Try to intersect the ray with the shape, and return only the closest t solution.
      * Ignore -t solutions.
+     * Ignore for backface
+     *
      * Returns INFINITY otherwise.
      *
      * @param ray
      * @return t
      */
     double intersect(Ray ray) override {
-        float denominator = dot(normal, normalize(ray.direction) );
+        float denominator = dot(normal, normalize(-ray.direction) );
 
-        if (abs(denominator) > 0.000001f){
-            float t = dot( (position - ray.origin), normal) / denominator;
-            if (t>0)
-                return t;
+        if (denominator > 0.000001f){
+            float t = dot( (ray.origin - position), normal) / denominator;
+            if (t>0) return t;
         }
 
         return INFINITY;
@@ -164,14 +174,57 @@ public:
  * Class that represent every triangle in a mesh
  */
 class Triangle : public Plane {
+    vec3 p1;
+    vec3 p2;
+    vec3 p3;
+public:
+    Triangle(vec3 p1, vec3 p2, vec3 p3) {
+        this->p1 = p1;
+        this->p2 = p2;
+        this->p3 = p3;
 
+        normal = normalize(cross(p2-p1, p3-p1));
+        position = p1;
+    }
+
+    double intersect(Ray ray) override {
+        // Intersection with the general forming plane
+        // This enforce backface culling
+        double t = Plane::intersect(ray);
+        if(t == INFINITY)
+            return t;
+
+        ///// Barycentric method
+        // Finding the point
+        vec3 point = ray.origin + (float)t*ray.direction;
+
+        vec3 edge0 = p2-p1;
+        vec3 edge1 = p3-p2;
+        vec3 edge2 = p1-p3;
+
+        vec3 C0 = point - p1;
+        vec3 C1 = point - p2;
+        vec3 C2 = point - p3;
+
+        // Negative bias for clean edges and slight permission
+        float edgeBias = -0.000001f;
+
+        // Check if inside the triangle
+        if(
+                dot(normal, cross(edge0, C0)) > edgeBias
+                && dot(normal, cross(edge1, C1)) > edgeBias
+                && dot(normal, cross(edge2, C2)) > edgeBias
+                ){
+            return t;
+        }
+        return INFINITY;
+    }
 };
 
 /**
  * Holding mesh informations
  */
 struct Mesh {
-    Material material;
     vector<Triangle *> triangles;
 };
 

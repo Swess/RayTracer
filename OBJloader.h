@@ -19,8 +19,6 @@ bool loadOBJ(
     vector<vec2> temp_uvs;
     vector<vec3> temp_normals;
 
-    std::cout << path << std::endl;
-
     FILE * file;
     file = fopen(path, "r"); // &file, path, "r"
     if (!file) {
