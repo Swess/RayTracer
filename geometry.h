@@ -3,6 +3,7 @@
 #include "NeededMath.h"
 
 using namespace std;
+using namespace glm;
 
 #ifndef RAYTRACER_HELPERS_H
 #define RAYTRACER_HELPERS_H
@@ -12,7 +13,7 @@ using namespace std;
  * All surfaces materials struct
  */
 struct Material {
-    Vec3 ambient, diffuse, specular;
+    vec3 ambient, diffuse, specular;
     float shininess;
 };
 
@@ -21,11 +22,11 @@ struct Material {
  */
 class SceneObj {
 public:
-    Vec3 position = Vec3(0, 0, 0);
+    vec3 position = vec3();
 
     SceneObj() {}
 
-    SceneObj(Vec3 pos) { position = pos; }
+    SceneObj(vec3 pos) { position = pos; }
 };
 
 /**
@@ -37,10 +38,10 @@ public:
 
     Renderable() {}
 
-    Renderable(const Vec3 &pos) : SceneObj(pos) {}
+    Renderable(const vec3 &pos) : SceneObj(pos) {}
 
     virtual double intersect(Ray ray){return INFINITY;}
-    virtual Vec3 getNormalAt(Vec3 point){return Vec3();}
+    virtual vec3 getNormalAt(vec3 point){return vec3();}
 };
 
 /**
@@ -54,9 +55,9 @@ public:
 
     Camera() {}
 
-    Camera(const Vec3 &pos) : SceneObj(pos) {}
+    Camera(const vec3 &pos) : SceneObj(pos) {}
 
-    Camera(const Vec3 &pos, float fov, float fl, float ar) : SceneObj(pos) {
+    Camera(const vec3 &pos, float fov, float fl, float ar) : SceneObj(pos) {
         this->fov = fov;
         this->focalLength = fl;
         this->aspectRatio = ar;
@@ -68,8 +69,8 @@ public:
  */
 class Light : public SceneObj {
 public:
-    Vec3 diffuseColor;
-    Vec3 specularColor;
+    vec3 diffuseColor;
+    vec3 specularColor;
 
     Light() {}
 };
@@ -82,7 +83,7 @@ class Sphere : public Renderable {
 public:
     double radius;
 
-    Sphere(const Vec3 &pos, double radius) : Renderable(pos), radius(radius) {}
+    Sphere(const vec3 &pos, double radius) : Renderable(pos), radius(radius) {}
 
     /**
      * Try to intersect the ray with the shape, and return only the closest t solution.
@@ -93,9 +94,9 @@ public:
      * @return t
      */
     double intersect(Ray ray) override {
-        Vec3 diff = ray.origin - position;
+        vec3 diff = ray.origin - position;
 
-        double b = 2*(dot(diff, ray.direction.normalize()));
+        double b = 2*(dot(diff, normalize(ray.direction) ));
         double c = dot(diff, diff) - pow(radius, 2);
 
         // Solving quadratic
@@ -112,14 +113,14 @@ public:
             // Clamp for smallest over 0
             t0 = t0 < 0 ? INFINITY : t0;
             t1 = t1 < 0 ? INFINITY : t1;
-            result = min(t0,t1);
+            result = glm::min(t0,t1);
         }
 
         return result;
     }
 
-    Vec3 getNormalAt(Vec3 point) override {
-        return (point - position).normalize();
+    vec3 getNormalAt(vec3 point) override {
+        return normalize(point - position);
     }
 };
 
@@ -129,7 +130,7 @@ public:
  */
 class Plane : public Renderable {
 public:
-    Vec3 normal;
+    vec3 normal;
 
     Plane() {}
 
@@ -142,7 +143,7 @@ public:
      * @return t
      */
     double intersect(Ray ray) override {
-        float denominator = dot(normal, ray.direction.normalize());
+        float denominator = dot(normal, normalize(ray.direction) );
 
         if (abs(denominator) > 0.000001f){
             float t = dot( (position - ray.origin), normal) / denominator;
@@ -153,8 +154,8 @@ public:
         return INFINITY;
     }
 
-    Vec3 getNormalAt(Vec3 point) override {
-        return normal.normalize();
+    vec3 getNormalAt(vec3 point) override {
+        return normalize(normal);
     }
 };
 
@@ -163,7 +164,7 @@ public:
  * Scene containing all objects
  */
 struct Scene {
-    Camera cam = Camera(Vec3());
+    Camera cam = Camera(vec3());
     vector<Light *> lights;
     vector<Renderable *> objs;
 };

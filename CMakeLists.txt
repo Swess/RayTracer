@@ -9,6 +9,7 @@ SET(GCC_COVERAGE_COMPILE_FLAGS "-lX11 -lpthread")
 
 include_directories(/usr/local/include)
 include_directories(/opt/X11/include)
+include_directories(glm)
 include_directories(.)
 
 link_directories(/opt/X11/lib)

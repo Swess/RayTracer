@@ -2,16 +2,19 @@
 #include <vector>
 #include <cmath>
 #include <CImg.h>
+#include "glm/vec3.hpp"
+#include "glm/geometric.hpp"
 #include "NeededMath.h"
 #include "geometry.h"
 
 using namespace std;
 using namespace cimg_library;
+using namespace glm;
 
 // Signatures
 void loadScene(ifstream &file, Scene &scene);
 
-Vec3 readVec3(ifstream &file);
+vec3 readVec3(ifstream &file);
 
 
 // Main
@@ -57,13 +60,13 @@ int main() {
             // Current pixel y, calculated from ray.y coordinate (j)
             int imgY = -j + HEIGHT / 2;
             double t;
-            Vec3 pixelColor = Vec3();
+            vec3 pixelColor = vec3();
 
             // Create ray for current pixel
-            Ray ray = Ray(scene.cam.position, Vec3(i, j, -scene.cam.focalLength).normalize());
+            Ray ray = Ray(scene.cam.position, normalize(vec3(i, j, -scene.cam.focalLength)) );
 
             // Check intersection with each objs
-            double closestScalar = INFINITY;
+            float closestScalar = INFINITY;
             Renderable *closestObj;
             for (int k = 0; k < scene.objs.size(); k++) {
                 // Return only value > 0
@@ -79,17 +82,17 @@ int main() {
             // Color pixel at calculated intersection
             if (closestScalar < INFINITY) {
                 // Compute intersection world coord
-                Vec3 pointIntersect = ray.origin + (ray.direction * closestScalar);
-                Vec3 result;    // Will contain the diffuse + specular contributions of the lights
+                vec3 pointIntersect = ray.origin + (ray.direction * closestScalar);
+                vec3 result = vec3();    // Will contain the diffuse + specular contributions of the lights
 
                 // Cast shadow rays
-                double bias = 0.00001f;
+                float bias = 0.001f;
                 for (int l = 0; l < scene.lights.size(); l++) {
                     Light *light = scene.lights[l];
 
-                    Vec3 normal = closestObj->getNormalAt(pointIntersect);
-                    Vec3 shadowDir = light->position - pointIntersect;
-                    Ray shadowRay = Ray(pointIntersect + normal * bias, shadowDir.normalize());
+                    vec3 normal = closestObj->getNormalAt(pointIntersect);
+                    vec3 shadowDir = light->position - pointIntersect;
+                    Ray shadowRay = Ray(pointIntersect + normal * bias, normalize(shadowDir) );
 
                     // Check if in shadow or not
                     bool lit = true;
@@ -106,27 +109,22 @@ int main() {
                     // If still considered in the light
                     if (lit) {
                         // Computing Phong Model
-                        Vec3 light_reflection = reflect(-shadowRay.direction.normalize(), normal.normalize());
-                        Vec3 diffuseCoef = closestObj->material.diffuse * max(dot(normal.normalize(), shadowRay.direction.normalize()), 0.0);
-                        Vec3 specularCoef = closestObj->material.specular * pow(max(dot(light_reflection, -ray.direction), 0.0), closestObj->material.shininess);
+                        vec3 light_reflection = reflect(normalize(-shadowRay.direction), normalize(normal) );
+                        vec3 diffuseCoef = closestObj->material.diffuse * (float)glm::max(dot(normalize(normal), normalize(shadowRay.direction) ), 0.0);
+                        vec3 specularCoef = closestObj->material.specular * (float)pow(glm::max(dot(light_reflection, -ray.direction), 0.0), closestObj->material.shininess);
 
                         // Diffuse
-                        result.x += light->diffuseColor.x * diffuseCoef.x;
-                        result.y += light->diffuseColor.y * diffuseCoef.y;
-                        result.z += light->diffuseColor.z * diffuseCoef.z;
+                        result += light->diffuseColor * diffuseCoef;
 
                         // Specular
-                        result.x += light->specularColor.x * specularCoef.x;
-                        result.y += light->specularColor.y * specularCoef.y;
-                        result.z += light->specularColor.z * specularCoef.z;
+                        result += light->diffuseColor * specularCoef;
                     }
                 }
 
                 // Adding ambient + result
-                pixelColor.x += closestObj->material.ambient.x + result.x;
-                pixelColor.y += closestObj->material.ambient.y + result.y;
-                pixelColor.z += closestObj->material.ambient.z + result.z;
+                pixelColor += closestObj->material.ambient + result;
 
+                // Scale and clamp color
                 pixelColor = pixelColor * 255.f;
                 clampColor(pixelColor);
 
@@ -185,7 +183,7 @@ void loadScene(ifstream &file, Scene &scene) {
 
 
         } else if (token == "sphere") {
-            Sphere *sphere = new Sphere(Vec3(), 0);
+            Sphere *sphere = new Sphere(vec3(0,0,0), 0);
             Material mat;
 
             for (int i = 0; i < 6; i++) {
@@ -262,7 +260,7 @@ void loadScene(ifstream &file, Scene &scene) {
  * @param file
  * @return
  */
-Vec3 readVec3(ifstream &file) {
+vec3 readVec3(ifstream &file) {
     double x, y, z;
     file >> x;
     file >> y;
