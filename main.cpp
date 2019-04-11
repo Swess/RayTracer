@@ -51,11 +51,13 @@ int main() {
     // Shoot rays
     for (int i = -WIDTH / 2; i < WIDTH / 2; i++) {
         // Current pixel x, calculated from ray.x coordinate (i)
-        int imgX = i + WIDTH/2;
+        int imgX = i + WIDTH / 2;
 
-        for (int j = HEIGHT / 2; j > -HEIGHT/2; j--) {
+        for (int j = HEIGHT / 2; j > -HEIGHT / 2; j--) {
             // Current pixel y, calculated from ray.y coordinate (j)
-            int imgY = -j + HEIGHT/2;
+            int imgY = -j + HEIGHT / 2;
+            double t;
+            Vec3 pixelColor = Vec3();
 
             // Create ray for current pixel
             Ray ray = Ray(scene.cam.position, Vec3(i, j, -scene.cam.focalLength).normalize());
@@ -64,9 +66,8 @@ int main() {
             double closestScalar = INFINITY;
             Renderable *closestObj;
             for (int k = 0; k < scene.objs.size(); k++) {
-
                 // Return only value > 0
-                double t = scene.objs[k]->intersect(ray);
+                t = scene.objs[k]->intersect(ray);
 
                 // The closest intersection only
                 if (t < closestScalar && t > 0) {
@@ -76,36 +77,75 @@ int main() {
             }
 
             // Color pixel at calculated intersection
-            if(closestScalar < INFINITY){
+            if (closestScalar < INFINITY) {
                 // Compute intersection world coord
-                Vec3 pointIntersect = scene.cam.position + (ray.direction*closestScalar);
+                Vec3 pointIntersect = ray.origin + (ray.direction * closestScalar);
+                Vec3 result;    // Will contain the diffuse + specular contributions of the lights
 
                 // Cast shadow rays
-                for(int l=0; l<scene.lights.size(); l++){
+                double bias = 0.00001f;
+                for (int l = 0; l < scene.lights.size(); l++) {
                     Light *light = scene.lights[l];
-                    Vec3 shadowDir = light->position - pointIntersect;
-                    Ray shadowRay = Ray(pointIntersect, shadowDir);
 
-                    // TODO: Detect intersection between pointIntersect and light
+                    Vec3 normal = closestObj->getNormalAt(pointIntersect);
+                    Vec3 shadowDir = light->position - pointIntersect;
+                    Ray shadowRay = Ray(pointIntersect + normal * bias, shadowDir.normalize());
+
+                    // Check if in shadow or not
+                    bool lit = true;
+                    for (int k = 0; k < scene.objs.size(); k++) {
+                        t = scene.objs[k]->intersect(shadowRay);
+
+                        // If we detect something in between intersection and light
+                        if (t < INFINITY) {
+                            lit = false;
+                            break;
+                        }
+                    }
+
+                    // If still considered in the light
+                    if (lit) {
+                        // Computing Phong Model
+                        Vec3 light_reflection = reflect(-shadowRay.direction.normalize(), normal.normalize());
+                        Vec3 diffuseCoef = closestObj->material.diffuse * max(dot(normal.normalize(), shadowRay.direction.normalize()), 0.0);
+                        Vec3 specularCoef = closestObj->material.specular * pow(max(dot(light_reflection, -ray.direction), 0.0), closestObj->material.shininess);
+
+                        // Diffuse
+                        result.x += light->diffuseColor.x * diffuseCoef.x;
+                        result.y += light->diffuseColor.y * diffuseCoef.y;
+                        result.z += light->diffuseColor.z * diffuseCoef.z;
+
+                        // Specular
+                        result.x += light->specularColor.x * specularCoef.x;
+                        result.y += light->specularColor.y * specularCoef.y;
+                        result.z += light->specularColor.z * specularCoef.z;
+                    }
                 }
 
-                // Color
-                image(imgX,imgY,0) = closestObj->material.diffuse.x * 255.0f;
-                image(imgX,imgY,1) = closestObj->material.diffuse.y * 255.0f;
-                image(imgX,imgY,2) = closestObj->material.diffuse.z * 255.0f;
+                // Adding ambient + result
+                pixelColor.x += closestObj->material.ambient.x + result.x;
+                pixelColor.y += closestObj->material.ambient.y + result.y;
+                pixelColor.z += closestObj->material.ambient.z + result.z;
+
+                pixelColor = pixelColor * 255.f;
+                clampColor(pixelColor);
+
+                // Paint the pixel
+                image(imgX,imgY,0) = pixelColor.x;
+                image(imgX,imgY,1) = pixelColor.y;
+                image(imgX,imgY,2) = pixelColor.z;
             }
 
 
         }
     }
 
-    // scenes/scene1.txt
-
     // Save img
+    // image.normalize(0, 255);
     image.save("render.bmp");
 
     // Display img
-    CImgDisplay main_disp(image,"Render");
+    CImgDisplay main_disp(image, "Render");
     while (!main_disp.is_closed()) {
         main_disp.wait();
     }

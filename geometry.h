@@ -40,6 +40,7 @@ public:
     Renderable(const Vec3 &pos) : SceneObj(pos) {}
 
     virtual double intersect(Ray ray){return INFINITY;}
+    virtual Vec3 getNormalAt(Vec3 point){return Vec3();}
 };
 
 /**
@@ -116,6 +117,10 @@ public:
 
         return result;
     }
+
+    Vec3 getNormalAt(Vec3 point) override {
+        return (point - position).normalize();
+    }
 };
 
 
@@ -141,11 +146,15 @@ public:
 
         if (abs(denominator) > 0.000001f){
             float t = dot( (position - ray.origin), normal) / denominator;
-            if (t>=0)
+            if (t>0)
                 return t;
         }
 
         return INFINITY;
+    }
+
+    Vec3 getNormalAt(Vec3 point) override {
+        return normal.normalize();
     }
 };
 
