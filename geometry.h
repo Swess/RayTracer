@@ -128,6 +128,11 @@ public:
         return result;
     }
 
+    /**
+     * Get normal of the sphere in straight line with the given point.
+     * @param point
+     * @return
+     */
     vec3 getNormalAt(vec3 point) override {
         return normalize(point - position);
     }
@@ -164,6 +169,11 @@ public:
         return INFINITY;
     }
 
+    /**
+     * Get normal of the plane, regardless of the point (same everywhere)
+     * @param point
+     * @return
+     */
     vec3 getNormalAt(vec3 point) override {
         return normalize(normal);
     }
@@ -187,6 +197,14 @@ public:
         position = p1;
     }
 
+    /**
+     * Find intersection with the given ray.
+     * Return a t value only if inside the triangle
+     * Compute for backface culling
+     *
+     * @param ray
+     * @return
+     */
     double intersect(Ray ray) override {
         // Intersection with the general forming plane
         // This enforce backface culling
@@ -220,6 +238,7 @@ public:
         return INFINITY;
     }
 };
+
 
 /**
  * Holding mesh informations

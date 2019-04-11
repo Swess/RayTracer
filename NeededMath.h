@@ -2,24 +2,19 @@
 #ifndef RAYTRACER_NEEDEDMATH_H
 #define RAYTRACER_NEEDEDMATH_H
 
-#include <sstream>
-
 using namespace std;
 using namespace glm;
 
+/**
+ * Computes the Dot Product between 2 vec3
+ * @param a
+ * @param b
+ * @return
+ */
 inline double dot(const vec3 &a, const vec3 &b) {
     return (a.x * b.x + a.y * b.y + a.z * b.z);
 }
 
-/**
- * Compute the reflection vector around the normal vector
- * @param dir
- * @param normal
- * @return
- */
-vec3 reflect(vec3 const &dir, vec3 const &normal){
-    return dir - (float)(2*dot(normal, dir))*normal;
-}
 
 /**
  * Limit the values of Vec3 color between [0.255]
@@ -41,6 +36,8 @@ struct Ray {
 
     Ray(const vec3 &origin, const vec3 &direction) : origin(origin), direction(direction) {}
 };
+
+
 
 
 #endif //RAYTRACER_NEEDEDMATH_H
