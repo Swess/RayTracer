@@ -99,7 +99,7 @@ int main() {
                         t = scene.objs[k]->intersect(shadowRay);
 
                         // If we detect something in between intersection and light
-                        if (t < INFINITY) {
+                        if (t < 1) {
                             lit = false;
                             break;
                         }
